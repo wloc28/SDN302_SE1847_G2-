@@ -7,11 +7,17 @@ const feedbackSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
     },
-    averageRating: { type: Number, default: 0 },
-    totalReviews: { type: Number, default: 0 },
-    positiveRate: { type: Number, default: 0 },
+    email: { type: String, required: true },
+    name: { type: String, required: true },
+    phone: { type: String, required: true },
+    content: { type: String, required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    status: {
+      type: String,
+      enum: ["pending", "responded"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );

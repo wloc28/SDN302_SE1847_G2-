@@ -7,6 +7,7 @@ const ProductRoutes = require("./product.routes");
 const OrderItemRoutes = require("./orderItem.routes");
 const ShippingInfoRoutes = require("./shippingInfo.routes");
 const adminRoutes = require("./admin.routes");
+const FeedbackRoutes = require("./feedback.routes");
 
 // Auth routes
 router.use("/auth", authRoutes);
@@ -28,5 +29,8 @@ router.use("/shippingInfos", ShippingInfoRoutes);
 
 // Admin routes
 router.use("/admin", adminRoutes);
+
+// Feedback routes
+router.use("/feedback", FeedbackRoutes);
 
 module.exports = router;
