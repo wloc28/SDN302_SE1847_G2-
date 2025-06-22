@@ -13,10 +13,26 @@ exports.createDispute = async (req, res) => {
 
 // Lấy danh sách khiếu nại
 exports.getAllDisputes = async (req, res) => {
+  // Lấy query parameters từ URL
+  const { orderId, raisedBy } = req.query;
+
+  // Tạo object filter rỗng ban đầu
+  const filter = {};
+
+  // Nếu có orderId, thêm vào filter
+  if (orderId) {
+    filter.orderId = orderId;
+  }
+
+  // Nếu có raisedBy, thêm vào filter
+  if (raisedBy) {
+    filter.raisedBy = raisedBy;
+  }
+
   try {
-    const disputes = await Dispute.find()
+    const disputes = await Dispute.find(filter)
       .populate("orderId")
-      .populate("raisedBy");
+      .populate("raisedBy", "-password");
     res.status(200).json(disputes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -33,8 +49,8 @@ exports.updateDisputeStatus = async (req, res) => {
       { status, resolution },
       { new: true }
     )
-    .populate("orderId")
-    .populate("raisedBy");
+      .populate("orderId")
+      .populate("raisedBy");
     res.status(200).json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });

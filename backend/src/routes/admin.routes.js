@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware } = require("../middleware/auth.middleware");
 const { isAdmin } = require("../middleware/role.middleware");
 const adminController = require("../controllers/admin.controller");
+const dashboardController = require("../controllers/dashboard.controller");
 
 // User Management
 router.get("/users", authMiddleware, isAdmin, adminController.getAllUsers);
@@ -126,6 +127,34 @@ router.put(
   authMiddleware,
   isAdmin,
   adminController.updateOrderStatus
+);
+
+router.get(
+  "/feedbacks",
+  authMiddleware,
+  isAdmin,
+  adminController.getAllFeedbacks
+);
+
+router.get(
+  "/feedbacks/seller/:sellerId",
+  authMiddleware,
+  isAdmin,
+  adminController.getAllFeedbackBySellerId
+);
+
+router.put(
+  "/feedbacks/:id",
+  authMiddleware,
+  isAdmin,
+  adminController.updateFeedbackStatus
+);
+
+router.get(
+  "/dashboard/analysis",
+  authMiddleware,
+  isAdmin,
+  dashboardController.getAnalysis
 );
 
 module.exports = router;

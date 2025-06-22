@@ -1,4 +1,11 @@
-const { User, Category, Product, Order, Store } = require("../models");
+const {
+  User,
+  Category,
+  Product,
+  Order,
+  Store,
+  Feedback,
+} = require("../models");
 const logger = require("../utils/logger");
 
 // Export all controller functions
@@ -414,8 +421,8 @@ module.exports = {
   getAllOrders: async (req, res) => {
     try {
       const orders = await Order.find()
-        .populate('buyerId')
-        .populate('addressId');
+        .populate("buyerId")
+        .populate("addressId");
       res.status(200).json({
         success: true,
         orders,
@@ -490,7 +497,7 @@ module.exports = {
   // Store Management
   getAllStores: async (req, res) => {
     try {
-      const stores = await Store.find().populate('sellerId');
+      const stores = await Store.find().populate("sellerId");
       res.status(200).json({
         success: true,
         stores,
@@ -511,7 +518,7 @@ module.exports = {
         req.params.id,
         { status: "approved" },
         { new: true }
-      ).populate('sellerId');
+      ).populate("sellerId");
 
       if (!store) {
         return res.status(404).json({
@@ -541,7 +548,7 @@ module.exports = {
         req.params.id,
         { status: "rejected" },
         { new: true }
-      ).populate('sellerId');
+      ).populate("sellerId");
 
       if (!store) {
         return res.status(404).json({
@@ -560,6 +567,74 @@ module.exports = {
       res.status(500).json({
         success: false,
         message: "Error rejecting store",
+        error: error.message,
+      });
+    }
+  },
+
+  getAllFeedbacks: async (req, res) => {
+    try {
+      const feedbacks = await Feedback.find().populate("sellerId");
+
+      res.status(200).json({
+        success: true,
+        feedbacks,
+      });
+    } catch (error) {
+      logger.error("Get all feedbacks error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error retrieving feedbacks",
+        error: error.message,
+      });
+    }
+  },
+
+  getAllFeedbackBySellerId: async (req, res) => {
+    const { sellerId } = req.params;
+    try {
+      const feedbacks = await Feedback.find({ sellerId }).sort({
+        createdAt: -1,
+      });
+      res.status(200).json({
+        success: true,
+        feedbacks,
+      });
+    } catch (error) {
+      logger.error("Get feedbacks by seller ID error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error retrieving feedbacks",
+        error: error.message,
+      });
+    }
+  },
+
+  updateFeedbackStatus: async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+      const feedback = await Feedback.findById(id);
+      if (!feedback) {
+        return res.status(404).json({
+          success: false,
+          message: "Feedback not found",
+        });
+      }
+
+      feedback.status = status;
+      await feedback.save();
+      return res.status(200).json({
+        success: true,
+        message: "Feedback status updated successfully",
+        feedback: feedback,
+      });
+    } catch (error) {
+      logger.error("Update feedback status error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error updating feedback status",
         error: error.message,
       });
     }
