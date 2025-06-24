@@ -7,3 +7,4 @@ router.get("/:productId", inventoryController.getInventoryByProduct);
 router.get("/", inventoryController.getAllInventories);
 
 module.exports = router;
+
