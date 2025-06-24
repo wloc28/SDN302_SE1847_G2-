@@ -23,6 +23,10 @@ const Sell = () => {
   const navigate = useNavigate();
   const userData = localStorage.getItem('currentUser')
 
+  const handleNavigateToNewProduct = () => {
+    navigate("/sell/new-product");
+  };
+
   // Get user and store data
   useEffect(() => {
     const fetchData = async () => {
@@ -154,9 +158,19 @@ const Sell = () => {
       <div className="flex p-4">
         {/* Main Content Area */}
         <div className="w-3/4 pr-4">
-          <h1 className="text-2xl font-bold mb-4">
-            {currentUser.role === "seller" ? "Seller Dashboard" : "My eBay"}
-          </h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">
+              {currentUser.role === "seller" ? "Seller Dashboard" : "My eBay"}
+            </h1>
+            {currentUser.role === "seller" && store?.status === "approved" && (
+              <button
+                onClick={handleNavigateToNewProduct}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-600 transition-colors"
+              >
+                Đăng bán sản phẩm
+              </button>
+            )}
+          </div>
 
           {currentUser.role === "seller" ? (
             store?.status === "approved" ? (
