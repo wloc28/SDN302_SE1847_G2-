@@ -1,8 +1,18 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-// Import Address model directly as it's used in register
 const { User, Address, Store } = require("../models");
 const logger = require("../utils/logger");
+
+/**
+ * Generate JWT token
+ */
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+};
 
 /**
  * Register a new user
@@ -18,7 +28,6 @@ exports.register = async (req, res) => {
       role,
       avatarURL,
       phone,
-      fullname,
       fullName,
       street,
       city,
@@ -26,7 +35,13 @@ exports.register = async (req, res) => {
       country,
     } = req.body;
 
-    // Check if user already exists
+    if (!username || !email || !password || !fullName) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+
     const userExists = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -40,17 +55,17 @@ exports.register = async (req, res) => {
 
     const user = await User.create({
       username,
-      fullname,
+      fullName,
       email,
       password,
       role: role || "buyer",
       avatarURL: avatarURL || "",
     });
 
-    if (fullName && phone && street && city && state && country) {
+    if (phone && street && city && state && country) {
       await Address.create({
         userId: user._id,
-        fullName: fullName,
+        fullName,
         phone,
         street,
         city,
@@ -60,12 +75,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+    const token = generateToken(user);
 
     res.status(201).json({
       success: true,
@@ -74,7 +84,7 @@ exports.register = async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
-        fullname: user.fullname,
+        fullName: user.fullName,
         email: user.email,
         role: user.role,
         avatarURL: user.avatarURL,
@@ -82,13 +92,6 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     logger.error("Registration error:", error);
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: error.errors,
-      });
-    }
     res.status(500).json({
       success: false,
       message: "Error registering user",
@@ -106,23 +109,21 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
     const user = await User.findOne({ email });
-    if (!user) {
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Email or password is incorrect",
       });
     }
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
-    }
-
-    // Check if user account is locked
     if (user.action === "lock") {
       return res.status(403).json({
         success: false,
@@ -130,12 +131,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+    const token = generateToken(user);
 
     res.status(200).json({
       success: true,
@@ -144,7 +140,7 @@ exports.login = async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
-        fullname: user.fullname,
+        fullName: user.fullName,
         email: user.email,
         role: user.role,
         avatarURL: user.avatarURL,
@@ -167,7 +163,6 @@ exports.login = async (req, res) => {
  */
 exports.getCurrentUser = async (req, res) => {
   try {
-    // req.user comes from the authMiddleware
     const user = await User.findById(req.user.id).select("-password");
 
     if (!user) {
@@ -182,7 +177,7 @@ exports.getCurrentUser = async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
-        fullname: user.fullname,
+        fullName: user.fullName,
         email: user.email,
         role: user.role,
         avatarURL: user.avatarURL,
@@ -211,11 +206,6 @@ exports.logout = (req, res) => {
 };
 
 /**
- * Upgrade user to seller role
- * @route POST /api/auth/upgrade-to-seller
- * @access Private
- */
-/**
  * Create a store for a seller
  * @route POST /api/auth/create-store
  * @access Private
@@ -225,7 +215,6 @@ exports.createStore = async (req, res) => {
     const userId = req.user.id;
     const { storeName, description, bannerImageURL } = req.body;
 
-    // Validate required fields
     if (!storeName) {
       return res.status(400).json({
         success: false,
@@ -233,9 +222,7 @@ exports.createStore = async (req, res) => {
       });
     }
 
-    // Find the user
     const user = await User.findById(userId);
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -243,7 +230,6 @@ exports.createStore = async (req, res) => {
       });
     }
 
-    // Check if user is already a seller with a store
     const existingStore = await Store.findOne({ sellerId: userId });
     if (existingStore) {
       return res.status(400).json({
@@ -252,11 +238,9 @@ exports.createStore = async (req, res) => {
       });
     }
 
-    // Update user role to seller
     user.role = "seller";
     await user.save();
 
-    // Create the store with pending status
     const store = await Store.create({
       sellerId: userId,
       storeName,
@@ -265,12 +249,7 @@ exports.createStore = async (req, res) => {
       status: "pending",
     });
 
-    // Generate new JWT token with updated role
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+    const token = generateToken(user);
 
     res.status(201).json({
       success: true,
@@ -280,7 +259,7 @@ exports.createStore = async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
-        fullname: user.fullname,
+        fullName: user.fullName,
         email: user.email,
         role: user.role,
         avatarURL: user.avatarURL,
@@ -316,7 +295,7 @@ exports.getStore = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      store, // Return the found store object
+      store,
     });
   } catch (error) {
     logger.error("Get store error:", error);
