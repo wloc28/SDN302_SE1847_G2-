@@ -12,6 +12,7 @@ const storeSchema = new Schema(
     storeName: { type: String, required: true },
     description: { type: String },
     bannerImageURL: { type: String },
+    closeDate: { type: Date },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
