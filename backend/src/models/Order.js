@@ -5,7 +5,7 @@ const orderSchema = new Schema(
   {
     buyerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     addressId: { type: Schema.Types.ObjectId, ref: "Address", required: true },
-    orderDate: { type: Date, default: Date.now },
+    orderDate: { type: Date, default: Date.now, index: true },
     totalPrice: { type: Number, required: true },
     status: {
       type: String,

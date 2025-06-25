@@ -13,7 +13,7 @@ const paymentSchema = new Schema(
       enum: ["pending", "paid", "failed"],
       default: "pending",
     },
-    paidAt: { type: Date },
+    paidAt: { type: Date, index: true },
   },
   { timestamps: true }
 );
