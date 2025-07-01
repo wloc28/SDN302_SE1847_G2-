@@ -15,6 +15,8 @@ const productSchema = new Schema(
     sellerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     isAuction: { type: Boolean, default: false },
     auctionEndTime: { type: Date },
+    quantity: { type: Number, required: true, default: 1 },
+    hidden: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

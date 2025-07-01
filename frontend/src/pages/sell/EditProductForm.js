@@ -10,12 +10,14 @@ const EditProductForm = () => {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [images, setImages] = useState([]);
-  const [existingImages, setExistingImages] = useState([]);
+  const [existingImage, setExistingImage] = useState(null);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
+  const [image, setImage] = useState(null);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     // Fetch categories from the backend
@@ -40,11 +42,12 @@ const EditProductForm = () => {
             const response = await fetch(`http://localhost:5000/api/products/${id}`);
             const data = await response.json();
             if (response.ok) {
-                setName(data.name);
+                setName(data.title);
                 setDescription(data.description);
                 setPrice(data.price);
-                setCategory(data.category._id);
-                setExistingImages(data.images);
+                setCategory(data.categoryId?._id || data.categoryId);
+                setQuantity(data.quantity || 1);
+                setExistingImage(data.image || null);
             } else {
                 setError("Failed to fetch product data");
             }
@@ -59,22 +62,31 @@ const EditProductForm = () => {
   }, [id]);
 
   const handleImageChange = (e) => {
-    setImages([...e.target.files]);
+    setImage(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    if (!price || isNaN(price) || Number(price) <= 0) {
+      setError("Giá sản phẩm phải là số dương!");
+      setIsLoading(false);
+      return;
+    }
+    if (!quantity || isNaN(quantity) || Number(quantity) <= 0 || !Number.isInteger(Number(quantity))) {
+      setError("Số lượng phải là số nguyên dương!");
+      setIsLoading(false);
+      return;
+    }
 
     const formData = new FormData();
-    formData.append("name", name);
+    formData.append("title", name);
     formData.append("description", description);
     formData.append("price", price);
-    formData.append("category", category);
-    images.forEach((image) => {
-      formData.append("images", image);
-    });
+    formData.append("categoryId", category);
+    formData.append("quantity", quantity);
+    if (image) formData.append("image", image);
 
     const token = localStorage.getItem("token");
 
@@ -143,10 +155,14 @@ const EditProductForm = () => {
               Giá
             </label>
             <input
-              type="number"
+              type="text"
               id="price"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={e => {
+                const val = e.target.value;
+                if (/^\d*\.?\d*$/.test(val) || val === "") setPrice(val);
+              }}
+              min={1}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
               required
             />
@@ -171,25 +187,43 @@ const EditProductForm = () => {
             </select>
           </div>
           <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Hình ảnh hiện tại
-              </label>
-              <div className="mt-2 flex space-x-2">
-                {existingImages.map((image, index) => (
-                    <img key={index} src={`http://localhost:5000/${image}`} alt="product" className="w-20 h-20 object-cover rounded-md"/>
-                ))}
-              </div>
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
+              Số lượng
+            </label>
+            <input
+              type="text"
+              id="quantity"
+              value={quantity}
+              onChange={e => {
+                const val = e.target.value;
+                if (/^\d*$/.test(val) || val === "") setQuantity(val);
+              }}
+              min={1}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              required
+            />
           </div>
           <div>
-            <label htmlFor="images" className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700">
+              Hình ảnh hiện tại
+            </label>
+            <div className="mt-2 flex space-x-2">
+              {existingImage ? (
+                <img src={existingImage.startsWith('http') ? existingImage : `http://localhost:5000/${existingImage}`} alt="product" className="w-20 h-20 object-cover rounded-md" />
+              ) : (
+                <span className="text-gray-400">No Image</span>
+              )}
+            </div>
+          </div>
+          <div>
+            <label htmlFor="image" className="block text-sm font-medium text-gray-700">
               Thêm hình ảnh mới
             </label>
             <input
               type="file"
-              id="images"
+              id="image"
               onChange={handleImageChange}
               className="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-              multiple
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}

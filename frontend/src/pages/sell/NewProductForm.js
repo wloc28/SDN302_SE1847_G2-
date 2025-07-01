@@ -3,16 +3,21 @@ import { useNavigate } from "react-router-dom";
 import MainHeader from "../../components/MainHeader";
 import TopMenu from "../../components/TopMenu";
 import SubMenu from "../../components/SubMenu";
+import ReCAPTCHA from "react-google-recaptcha";
+
+const RECAPTCHA_SITE_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google test key
 
 const NewProductForm = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
-  const [images, setImages] = useState([]);
+  const [image, setImage] = useState(null);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [recaptchaToken, setRecaptchaToken] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,25 +40,41 @@ const NewProductForm = () => {
   }, []);
 
   const handleImageChange = (e) => {
-    setImages([...e.target.files]);
+    setImage(e.target.files[0]);
+  };
+
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
+    if (!recaptchaToken) {
+      setError("Vui lòng xác thực reCAPTCHA!");
+      setIsLoading(false);
+      return;
+    }
+    if (!price || isNaN(price) || Number(price) <= 0) {
+      setError("Giá sản phẩm phải là số dương!");
+      setIsLoading(false);
+      return;
+    }
+    if (!quantity || isNaN(quantity) || Number(quantity) <= 0 || !Number.isInteger(Number(quantity))) {
+      setError("Số lượng phải là số nguyên dương!");
+      setIsLoading(false);
+      return;
+    }
     const formData = new FormData();
-    formData.append("name", name);
+    formData.append("title", name);
     formData.append("description", description);
     formData.append("price", price);
-    formData.append("category", category);
-    images.forEach((image) => {
-      formData.append("images", image);
-    });
-
+    formData.append("categoryId", category);
+    formData.append("quantity", quantity);
+    if (image) formData.append("image", image);
+    formData.append("recaptchaToken", recaptchaToken);
     const token = localStorage.getItem("token");
-
     try {
       const response = await fetch("http://localhost:5000/api/products", {
         method: "POST",
@@ -62,11 +83,9 @@ const NewProductForm = () => {
         },
         body: formData,
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        navigate("/sell"); // Redirect to seller dashboard on success
+        navigate("/sell");
       } else {
         setError(data.message || "Failed to create product");
       }
@@ -119,10 +138,14 @@ const NewProductForm = () => {
               Giá
             </label>
             <input
-              type="number"
+              type="text"
               id="price"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={e => {
+                const val = e.target.value;
+                if (/^\d*\.?\d*$/.test(val) || val === "") setPrice(val);
+              }}
+              min={1}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
               required
             />
@@ -147,15 +170,38 @@ const NewProductForm = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="images" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
+              Số lượng
+            </label>
+            <input
+              type="text"
+              id="quantity"
+              value={quantity}
+              onChange={e => {
+                const val = e.target.value;
+                if (/^\d*$/.test(val) || val === "") setQuantity(val);
+              }}
+              min={1}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="image" className="block text-sm font-medium text-gray-700">
               Hình ảnh
             </label>
             <input
               type="file"
-              id="images"
+              id="image"
               onChange={handleImageChange}
               className="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-              multiple
+              required
+            />
+          </div>
+          <div>
+            <ReCAPTCHA
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={handleRecaptchaChange}
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}

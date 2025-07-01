@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import MainHeader from "../../components/MainHeader"
 import TopMenu from "../../components/TopMenu"
@@ -28,20 +28,18 @@ const SellerProducts = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortField, setSortField] = useState("idProduct")
   const [sortDirection, setSortDirection] = useState("asc")
+  const [filterHidden, setFilterHidden] = useState("all")
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser"))
+  const didFetch = useRef(false)
 
   useEffect(() => {
+    if (!currentUser || !currentUser.id || didFetch.current) return
+    didFetch.current = true
     const fetchSellerProducts = async () => {
-      if (!currentUser || !currentUser.id) {
-        setError("Vui lòng đăng nhập để xem sản phẩm của bạn.");
-        setLoading(false);
-        return;
-      }
-
       try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
+        setLoading(true)
+        const token = localStorage.getItem("token")
         const response = await fetch(
           `http://localhost:5000/api/products/seller/${currentUser.id}`,
           {
@@ -49,76 +47,66 @@ const SellerProducts = () => {
               Authorization: `Bearer ${token}`,
             },
           }
-        );
-
+        )
         if (!response.ok) {
-          throw new Error("Không thể lấy danh sách sản phẩm của người bán");
+          throw new Error("Không thể lấy danh sách sản phẩm của người bán")
         }
-
-        const products = await response.json();
-        setProductsDetails(products);
+        const products = await response.json()
+        setProductsDetails(products)
       } catch (err) {
-        console.error("Fetch Error:", err);
-        setError(err.message);
+        setError(err.message)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-
-    fetchSellerProducts();
-  }, [currentUser]);
+    }
+    fetchSellerProducts()
+  }, [currentUser])
 
   const handleDeleteProduct = async (productId) => {
-    if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
+    if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token")
       const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Không thể xóa sản phẩm.");
+        throw new Error("Không thể xóa sản phẩm.")
       }
 
-      setProductsDetails(productsDetails.filter((p) => p._id !== productId));
+      setProductsDetails(productsDetails.filter((p) => p._id !== productId))
     } catch (err) {
-      console.error("Delete Error:", err);
-      alert("Không thể xóa sản phẩm: " + err.message);
+      console.error("Delete Error:", err)
+      alert("Không thể xóa sản phẩm: " + err.message)
     }
-  };
+  }
 
-  const handleHideProduct = async (productId) => {
-    if (!window.confirm("Bạn có chắc muốn ẩn sản phẩm này?")) return;
+  const handleToggleHideProduct = async (productId, hidden) => {
+    const confirmMsg = hidden ? "Bạn có chắc muốn hiện sản phẩm này?" : "Bạn có chắc muốn ẩn sản phẩm này?"
+    if (!window.confirm(confirmMsg)) return
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/products/${productId}/hide`, {
+      const token = localStorage.getItem("token")
+      const endpoint = hidden ? "show" : "hide"
+      const response = await fetch(`http://localhost:5000/api/products/${productId}/${endpoint}`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Không thể ẩn sản phẩm.");
-      }
-      
-      const updatedProduct = await response.json();
-      setProductsDetails(productsDetails.map((p) => (p._id === productId ? updatedProduct : p)));
-
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error("Không thể cập nhật trạng thái sản phẩm.")
+      const updatedProduct = await response.json()
+      setProductsDetails(productsDetails.map((p) => (p._id === productId ? updatedProduct : p)))
     } catch (err) {
-      console.error("Hide Error:", err);
-      alert("Không thể ẩn sản phẩm: " + err.message);
+      alert("Lỗi: " + err.message)
     }
-  };
+  }
 
   const handleEditProduct = (product) => {
-    navigate(`/sell/edit-product/${product._id}`);
-  };
+    navigate(`/sell/edit-product/${product._id}`)
+  }
 
   const handleSort = (field) => {
     const newDirection = sortField === field && sortDirection === "asc" ? "desc" : "asc"
@@ -133,10 +121,14 @@ const SellerProducts = () => {
   }
 
   const filteredProducts =
-    productsDetails.filter((product) => {
+    productsDetails.filter(product => {
+      if (filterHidden === "active") return !product.hidden;
+      if (filterHidden === "hidden") return product.hidden;
+      return true;
+    }).filter((product) => {
       const searchTermLower = searchTerm.toLowerCase()
       return (
-        product.name?.toLowerCase().includes(searchTermLower) ||
+        product.title?.toLowerCase().includes(searchTermLower) ||
         product.description?.toLowerCase().includes(searchTermLower)
       )
     }) || []
@@ -146,8 +138,8 @@ const SellerProducts = () => {
 
     switch (sortField) {
       case "name":
-        valueA = a.name || ""
-        valueB = b.name || ""
+        valueA = a.title || ""
+        valueB = b.title || ""
         break
       case "price":
         valueA = a.price || 0
@@ -270,6 +262,18 @@ const SellerProducts = () => {
               </div>
             </div>
 
+            <div className="mb-4">
+              <select
+                value={filterHidden}
+                onChange={e => setFilterHidden(e.target.value)}
+                className="border rounded p-2"
+              >
+                <option value="all">Tất cả sản phẩm</option>
+                <option value="active">Đang bán</option>
+                <option value="hidden">Đã ẩn</option>
+              </select>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100">
@@ -282,6 +286,9 @@ const SellerProducts = () => {
                       onClick={() => handleSort("name")}
                     >
                       Tên {getSortIcon("name")}
+                    </th>
+                    <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Danh mục
                     </th>
                     <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Mô tả
@@ -312,7 +319,7 @@ const SellerProducts = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {sortedProducts.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="p-6 text-center text-gray-500">
+                      <td colSpan="8" className="p-6 text-center text-gray-500">
                         Không tìm thấy sản phẩm nào.
                       </td>
                     </tr>
@@ -321,10 +328,10 @@ const SellerProducts = () => {
                       return (
                         <tr key={product._id} className="hover:bg-gray-50 transition-colors">
                           <td className="p-3 align-middle">
-                            {product.images && product.images.length > 0 ? (
+                            {product.image ? (
                               <img
-                                src={`http://localhost:5000/${product.images[0]}`}
-                                alt={product.name}
+                                src={product.image.startsWith('http') ? product.image : `http://localhost:5000/${product.image}`}
+                                alt={product.title}
                                 className="w-16 h-16 object-cover rounded-md border border-gray-200"
                               />
                             ) : (
@@ -333,7 +340,8 @@ const SellerProducts = () => {
                               </div>
                             )}
                           </td>
-                          <td className="p-3 align-middle font-medium text-gray-800">{product.name}</td>
+                          <td className="p-3 align-middle font-medium text-gray-800">{product.title}</td>
+                          <td className="p-3 align-middle text-sm text-gray-800">{product.categoryId?.name || "Không có danh mục"}</td>
                           <td className="p-3 align-middle text-sm text-gray-600 max-w-xs truncate">
                             {product.description}
                           </td>
@@ -350,7 +358,7 @@ const SellerProducts = () => {
                                 <FaEdit />
                               </button>
                               <button
-                                onClick={() => handleHideProduct(product._id)}
+                                onClick={() => handleToggleHideProduct(product._id, product.hidden)}
                                 className={`p-2 rounded-full ${
                                   product.hidden
                                     ? "text-gray-600 bg-gray-100 hover:bg-gray-200"
@@ -358,7 +366,7 @@ const SellerProducts = () => {
                                 } transition-all duration-200`}
                                 title={product.hidden ? "Hiện" : "Ẩn"}
                               >
-                                {product.hidden ? <FaEyeSlash /> : <FaEye />}
+                                {product.hidden ? <FaEye /> : <FaEyeSlash />}
                               </button>
                               <button
                                 onClick={() => handleDeleteProduct(product._id)}

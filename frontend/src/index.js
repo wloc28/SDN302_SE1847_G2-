@@ -12,7 +12,6 @@ import ListCategory from "./pages/listCategory/page";
 import Wishlist from "./pages/wishlist/page";
 import Sell from "./pages/sell/page";
 import CreateStore from "./pages/sell/createStore";
-
 import TotalSell from "./pages/totalSell/page";
 import Success from "./pages/success/page";
 import AuthPage from "./pages/auth/page";
@@ -26,6 +25,9 @@ import HelpContact from "./pages/help/page";
 import ProductList from "./pages/product/ProductList";
 import InventoryList from "./pages/inventory/InventoryList";
 import DisputeManage from "./pages/sellerProduct/disputeManage";
+import NewProductPage from "./pages/sell/new-product/page";
+import EditProductForm from "./pages/sell/EditProductForm";
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
@@ -53,6 +55,8 @@ root.render(
         <Route path="/create-store" element={<CreateStore />} />
         <Route path="/inventory" element={<InventoryList />} />
         <Route path="/disputes" element={<DisputeManage />} />
+        <Route path="/sell/new-product" element={<NewProductPage />} />
+        <Route path="/sell/edit-product/:id" element={<EditProductForm />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
