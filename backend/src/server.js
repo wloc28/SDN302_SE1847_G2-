@@ -10,6 +10,7 @@ const messageRoutes = require("./routes/message.routes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const disputeRoutes = require("./routes/dispute.routes");
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +25,7 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api', routes);
@@ -33,6 +35,23 @@ app.use('/api/categories', categoryRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/disputes", disputeRoutes);
+
+const createProductLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 phút
+  max: 5, // tối đa 5 lần tạo sản phẩm mỗi 10 phút
+  message: {
+    success: false,
+    message: 'Bạn đã tạo quá nhiều sản phẩm. Vui lòng thử lại sau 10 phút.'
+  }
+});
+
+app.use('/api/products', (req, res, next) => {
+  if (req.method === 'POST') {
+    return createProductLimiter(req, res, next);
+  }
+  next();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error(err.stack);
