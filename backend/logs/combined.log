@@ -71,3 +71,19 @@
 {"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-07-01 15:04:46"}
 {"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-07-01 15:20:01"}
 {"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-07-01 15:20:01"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-07-02 00:25:37"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-07-02 00:25:37"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-07-02 00:48:16"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-07-02 00:48:16"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-07-02 12:38:55"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-07-02 12:38:55"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-07-22 15:28:55"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-07-22 15:28:55"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-07-22 16:05:42"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-07-22 16:05:43"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-12-16 12:49:47"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-12-16 12:49:47"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-12-16 12:52:01"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-12-16 12:52:01"}
+{"level":"info","message":"Server running on port 5000","service":"e-commerce-api","timestamp":"2025-12-16 12:57:55"}
+{"level":"info","message":"MongoDB connected","service":"e-commerce-api","timestamp":"2025-12-16 12:57:55"}
